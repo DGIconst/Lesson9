@@ -1,64 +1,47 @@
 package configuration
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
+	"os"
 	"strings"
-
-	"github.com/kelseyhightower/envconfig"
 )
 
-type UrlMap []string
+type AllUrl url.URL
 
-func (u *UrlMap) Decode(value string) error {
-	for _, u := range *u {
-		_, err := url.Parse(u)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+type Config struct {
+	Port        int      `json:"port"`
+	DbURL       AllUrl   `json:"db_url"`
+	JaegerURL   AllUrl   `json:"jaeger_url"`
+	SentryURL   AllUrl   `json:"sentry_url"`
+	SomeAppID   string   `json:"some_app_id"`
+	SomeAppKey  string   `json:"some_app_key"`
+	KafkaBroker []string `json:"kafka_broker"`
+}
+
+func (u *AllUrl) UnmarshalJSON(value []byte) error {
+	val, err := url.Parse(strings.Replace(string(value), "\"", "", -1))
+	if err != nil {
+		return err
 	}
-	*u = strings.Split(value, ",")
+
+	*u = AllUrl(*val)
 	return nil
 }
 
-type KafkaMap map[string]int
-
-type Config struct {
-	Port         int
-	Id           string
-	Key          string
-	Url          UrlMap
-	Kafka_broker KafkaMap
-}
-
 func GetConfig() Config {
+	date, err := os.ReadFile("configuration/data.json")
+	if err != nil {
+		panic(err)
+	}
+
 	var g Config
-	err := envconfig.Process("myapp", &g)
-	if err != nil {
-		log.Fatal(err.Error())
+
+	if err = json.Unmarshal(date, &g); err != nil {
+		panic(err)
 	}
-	format := "Port: %d\nId: %s\nKey: %s\n"
-	_, err = fmt.Printf(format, g.Port, g.Id, g.Key)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Println("Url:")
-	for _, u := range g.Url {
-		fmt.Printf("%s\n", u)
-	}
-	fmt.Printf("Kafka_broker:")
-	for k, v := range g.Kafka_broker {
-		fmt.Printf("  %s: %d\n", k, v)
-	}
+
+	fmt.Println(g)
 	return Config{}
 }
-
-//  export MYAPP_PORT=8080
-//  export MYAPP_URL="db_url: postgres://db-user:db-password@petstore-db:5432/petstore?sslmode=disable,jaeger_url: http://jaeger:16686,sentry_url: http://sentry:9000"
-//  export MYAPP_KAFKA_BROKER="kafka:9092"
-//  export MYAPP_ID=testid
-//  export MYAPP_KEY=testkey
-
-// сломал всю голову перечитал пересмотрел и только больше запутался c
-// проверкой валидности Url мне кажеться что я перемудрил (())
