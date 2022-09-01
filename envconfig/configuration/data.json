@@ -6,5 +6,4 @@
     "some_app_id": "testid",
     "some_app_key": "testkey",
     "kafka_broker":["kafka:9090"]
-}
-    
+}   
