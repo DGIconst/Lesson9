@@ -27,6 +27,7 @@ func (u *AllUrl) UnmarshalJSON(value []byte) error {
 	}
 
 	*u = AllUrl(*val)
+
 	return nil
 }
 
@@ -43,5 +44,6 @@ func GetConfig() Config {
 	}
 
 	fmt.Println(g)
+
 	return Config{}
 }
